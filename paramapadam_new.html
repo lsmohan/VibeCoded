@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Paramapadam</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: #f5f0e8; font-family: sans-serif; overscroll-behavior: none; }
+
+  /* ── Layout ── */
+  body {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 5px;
+    min-height: 100vh;
+  }
+
+  #game-root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 1000px;
+    padding: 10px;
+  }
+
+  /* Desktop side-by-side */
+  @media (min-width: 900px) {
+    body { padding: 10px; }
+    #game-root {
+      flex-direction: row;
+      align-items: flex-start;
+      gap: 20px;
+    }
+  }
+
+  /* ── Board ── */
+  #board-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 520px;
+    flex-shrink: 0;
+  }
+  #board-img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 2px solid #ccc;
+  }
+  #token-layer, #highlight-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+
+  /* ── Panel ── */
+  #panel {
+    width: 100%;
+    max-width: 520px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  @media (min-width: 900px) {
+    #panel { flex: 1; }
+  }
+
+  /* ── Panel cards ── */
+  .panel-card {
+    background: white;
+    border: 0.5px solid #ddd;
+    border-radius: 12px;
+    padding: 14px 16px;
+  }
+  .panel-title {
+    font-size: 11px;
+    color: #999;
+    margin-bottom: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* ── Players row ── */
+  .player-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 0.5px solid #eee;
+  }
+  .player-row:last-child { border-bottom: none; }
+  .player-dot { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
+  .player-name { font-size: 15px; font-weight: 500; flex: 1; }
+  .player-pos { font-size: 13px; color: #888; font-variant-numeric: tabular-nums; }
+  .active-pill { font-size: 11px; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+
+  /* ── Dice & controls ── */
+  #dice-display { font-size: 60px; text-align: center; padding: 4px 0; line-height: 1; }
+  #turn-label { font-size: 14px; color: #888; text-align: center; padding: 4px 0; min-height: 22px; }
+  #roll-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    border: 1.5px solid #bbb;
+    border-radius: 10px;
+    background: white;
+    color: #111;
+    cursor: pointer;
+    margin-top: 10px;
+    -webkit-appearance: none;
+    transition: background 0.15s, transform 0.1s;
+    touch-action: manipulation;
+  }
+  #roll-btn:hover:not(:disabled) { background: #f5f5f5; }
+  #roll-btn:active:not(:disabled) { transform: scale(0.97); background: #f0f0f0; }
+  #roll-btn:disabled { opacity: 0.35; cursor: default; }
+
+  /* ── Auto-play row ── */
+  #auto-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  #auto-label { font-size: 13px; color: #888; }
+  #auto-toggle {
+    width: 46px; height: 26px; border-radius: 13px;
+    border: none; background: #ddd; cursor: pointer;
+    position: relative; transition: background 0.2s;
+    flex-shrink: 0; touch-action: manipulation;
+  }
+  #auto-knob {
+    position: absolute; top: 4px; left: 4px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: white; transition: left 0.2s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+  }
+
+  /* ── Log ── */
+  #log { overflow-y: auto; max-height: 180px; font-size: 13px; line-height: 1.7; color: #666; }
+  .log-entry { padding: 3px 0; border-bottom: 0.5px solid #f0f0f0; }
+  .log-entry:last-child { border-bottom: none; }
+  .log-snake  { color: #c62828; }
+  .log-ladder { color: #2e7d32; }
+  .log-win    { color: #1565C0; font-weight: 500; }
+
+  /* ── Reference grid ── */
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 2px 8px;
+    font-size: 12px;
+    line-height: 1.9;
+  }
+  @media (min-width: 400px) {
+    .ref-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  /* ── Collapsible reference ── */
+  details.panel-card > summary {
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    color: #999;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  details.panel-card[open] > summary { margin-bottom: 10px; }
+  details.panel-card summary::-webkit-details-marker { display: none; }
+  details.panel-card summary::marker { display: none; }
+  .ref-chevron {
+    font-size: 12px;
+    color: #ccc;
+    transition: transform 0.2s;
+    display: inline-block;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  details.panel-card[open] .ref-chevron { transform: rotate(180deg); }
+
+  /* ── Small-phone compactness ── */
+  @media (max-width: 480px) {
+    #dice-display { font-size: 46px; }
+    #roll-btn     { padding: 12px; font-size: 15px; }
+    #log          { max-height: 90px; }
+    .panel-card   { padding: 10px 12px; }
+    #game-root    { gap: 8px; }
+    .player-name  { font-size: 14px; }
+    .active-pill  { font-size: 10px; padding: 2px 6px; }
+    #auto-label   { font-size: 12px; }
+  }
+
+  /* ── Win overlay ── */
+  #win-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 1000; padding: 20px;
+  }
+  #win-card {
+    background: white; border-radius: 18px;
+    padding: 36px 32px; text-align: center;
+    width: 100%; max-width: 340px;
+  }
+  #win-title  { font-size: 28px; font-weight: 600; margin-bottom: 8px; }
+  #win-sub    { font-size: 15px; color: #888; margin-bottom: 28px; }
+  #play-again {
+    padding: 12px 36px; font-size: 16px;
+    border: 1.5px solid #bbb; border-radius: 10px;
+    background: white; cursor: pointer; width: 100%;
+    -webkit-appearance: none; touch-action: manipulation;
+  }
+  #play-again:active { background: #f0f0f0; }
+</style>
+</head>
+<body>
+<div id="game-root">
+
+  <!-- Board -->
+  <div id="board-wrap">
+    <img id="board-img" src="board.webp">
+    <canvas id="token-layer"></canvas>
+    <canvas id="highlight-overlay"></canvas>
+  </div>
+
+  <!-- Panel -->
+  <div id="panel">
+
+    <!-- Players -->
+    <div class="panel-card">
+      <div class="panel-title">Players</div>
+      <div class="player-row">
+        <div class="player-dot" style="background:#1565C0;"></div>
+        <div class="player-name">You</div>
+        <div class="player-pos" id="pos-p">Start</div>
+        <div class="active-pill" id="active-p" style="background:#e8f5e9;color:#2e7d32;">Your turn</div>
+      </div>
+      <div class="player-row">
+        <div class="player-dot" style="background:#B71C1C;"></div>
+        <div class="player-name">CPU</div>
+        <div class="player-pos" id="pos-c">Start</div>
+        <div class="active-pill" id="active-c" style="display:none;background:#fce4e4;color:#c62828;">CPU turn</div>
+      </div>
+    </div>
+
+    <!-- Dice & Roll -->
+    <div class="panel-card" style="text-align:center;">
+      <div id="dice-display">⚀</div>
+      <div id="turn-label">Your turn — roll!</div>
+      <button id="roll-btn">Roll Dice</button>
+      <div id="auto-row">
+        <span id="auto-label">Auto-play</span>
+        <button id="auto-toggle" title="Toggle auto-play">
+          <span id="auto-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel-card">
+      <div class="panel-title">Game Log</div>
+      <div id="log"><div class="log-entry">Game started! Your turn first.</div></div>
+    </div>
+
+    <!-- Reference -->
+    <details class="panel-card" open>
+      <summary>Snakes &amp; Ladders <span class="ref-chevron">▾</span></summary>
+      <div class="panel-title">Snakes</div>
+      <div class="ref-grid" style="color:#c62828;">
+        <span>119→95</span><span>121→99</span><span>111→89</span>
+        <span>106→1</span><span>97→73</span><span>75→10</span>
+        <span>59→8</span><span>43→21</span><span>26→3</span>
+        <span>17→6</span><span>55→33</span><span>47→25</span>
+      </div>
+      <div class="panel-title" style="margin-top:10px;">Ladders</div>
+      <div class="ref-grid" style="color:#2e7d32;">
+        <span>19→39</span><span>16→28</span><span>30→50</span>
+        <span>41→61</span><span>52→72</span><span>63→83</span>
+        <span>79→117</span><span>87→115</span>
+      </div>
+    </details>
+
+  </div><!-- /panel -->
+</div><!-- /game-root -->
+
+<script>
+(function () {
+  // ── Board geometry (original pixel coords at 520×620 render size) ──
+  const ORIG_W = 520, ORIG_H = 620;
+  const ORIG_LEFT = 18.5, ORIG_RIGHT = 488.5, ORIG_TOP = 84, ORIG_BOTTOM = 557;
+  const COLS = 11, ROWS = 12;
+
+  // Canvases are sized dynamically to match the rendered image
+  const boardImg  = document.getElementById('board-img');
+  const canvas    = document.getElementById('token-layer');
+  const ctx       = canvas.getContext('2d');
+  const hlCanvas  = document.getElementById('highlight-overlay');
+  const hlCtx     = hlCanvas.getContext('2d');
+
+  let RW = ORIG_W, RH = ORIG_H;  // rendered board size (updated on resize)
+  let SX = 1, SY = 1;            // scale factors
+  let LEFT, RIGHT, TOP, BOTTOM, CW, CH;
+
+  function computeScale() {
+    RW = boardImg.clientWidth;
+    RH = boardImg.clientHeight;
+    // Set canvas pixel dimensions to match display size (use devicePixelRatio for sharpness)
+    const dpr = window.devicePixelRatio || 1;
+    [canvas, hlCanvas].forEach(c => {
+      c.width  = RW * dpr;
+      c.height = RH * dpr;
+      c.style.width  = RW + 'px';
+      c.style.height = RH + 'px';
+      c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+    });
+    SX = RW / ORIG_W;
+    SY = RH / ORIG_H;
+    LEFT   = ORIG_LEFT   * SX;
+    RIGHT  = ORIG_RIGHT  * SX;
+    TOP    = ORIG_TOP    * SY;
+    BOTTOM = ORIG_BOTTOM * SY;
+    CW = (RIGHT - LEFT) / COLS;
+    CH = (BOTTOM - TOP) / ROWS;
+  }
+
+  function squareToCoord(sq) {
+    if (sq < 1) sq = 1;
+    const idx = sq - 1;
+    const row = Math.floor(idx / COLS);
+    const col = idx % COLS;
+    const actualCol = (row % 2 === 0) ? col : (COLS - 1 - col);
+    const gridRow = ROWS - 1 - row;
+    return { x: LEFT + actualCol * CW + CW / 2, y: TOP + gridRow * CH + CH / 2 };
+  }
+
+  const SNAKES  = {119:95, 121:99, 111:89, 106:1, 97:73, 75:10, 59:8, 43:21, 26:3, 17:6, 55:33, 47:25};
+  const LADDERS = {19:39, 16:28, 30:50, 41:61, 52:72, 63:83, 79:117, 87:115};
+
+  function getCurveCP(x1, y1, x2, y2, isSnake) {
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx*dx + dy*dy);
+    const perp = isSnake ? 1 : -1;
+    const offset = Math.min(len * 0.35, 80 * SX);
+    const nx = -dy / len * offset * perp;
+    const ny =  dx / len * offset * perp;
+    return [
+      x1 + (mx - x1) * 0.5 + nx, y1 + (my - y1) * 0.5 + ny,
+      x2 - (x2 - mx) * 0.5 + nx, y2 - (y2 - my) * 0.5 + ny
+    ];
+  }
+
+  const LONG_SNAKE_CP = {
+    106: [[50 * SX, 250 * SY, 200 * SX, 450 * SY]]
+  };
+
+  function cubicBezier(t, p0, p1, p2, p3) {
+    const u = 1 - t;
+    return u*u*u*p0 + 3*u*u*t*p1 + 3*u*t*t*p2 + t*t*t*p3;
+  }
+
+  const DICE_FACES = ['\u2680','\u2681','\u2682','\u2683','\u2684','\u2685'];
+  let state   = { pos: [0, 0], turn: 0, rolling: false, gameOver: false };
+  let pixelPos = [null, null];
+  let autoPlay = false;
+  let autoRollTimer = null;
+
+  // ── Drawing ──
+  function drawTokenAt(i, px, py) {
+    const colors  = ['#1565C0', '#B71C1C'];
+    const labels  = ['P', 'C'];
+    const offsets = [{ dx: -CW * 0.22 }, { dx: CW * 0.22 }];
+    const ox = offsets[i].dx;
+    const r  = Math.max(9, CW * 0.26);
+    ctx.beginPath();
+    ctx.arc(px + ox, py, r, 0, Math.PI * 2);
+    ctx.fillStyle = colors[i]; ctx.fill();
+    ctx.strokeStyle = 'white'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'white';
+    ctx.font = 'bold ' + Math.round(r * 0.85) + 'px sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(labels[i], px + ox, py);
+  }
+
+  function drawTokens() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < 2; i++) {
+      if (state.pos[i] < 1) continue;
+      const pos = pixelPos[i] || squareToCoord(state.pos[i]);
+      drawTokenAt(i, pos.x, pos.y);
+    }
+  }
+
+  function highlightSquare(sq, color) {
+    hlCtx.clearRect(0, 0, hlCanvas.width, hlCanvas.height);
+    if (!sq) return;
+    const { x, y } = squareToCoord(sq < 1 ? 1 : sq);
+    hlCtx.beginPath();
+    hlCtx.arc(x, y, CW * 0.44, 0, Math.PI * 2);
+    hlCtx.fillStyle = color; hlCtx.globalAlpha = 0.4; hlCtx.fill(); hlCtx.globalAlpha = 1;
+  }
+
+  function clearHighlight() { hlCtx.clearRect(0, 0, hlCanvas.width, hlCanvas.height); }
+
+  // ── UI ──
+  function addLog(msg, cls) {
+    const log = document.getElementById('log');
+    const div = document.createElement('div');
+    div.className = 'log-entry' + (cls ? ' ' + cls : '');
+    div.innerHTML = msg;
+    log.insertBefore(div, log.firstChild);
+  }
+
+  function updateUI() {
+    document.getElementById('pos-p').textContent  = state.pos[0] < 1 ? 'Start' : 'Sq ' + state.pos[0];
+    document.getElementById('pos-c').textContent  = state.pos[1] < 1 ? 'Start' : 'Sq ' + state.pos[1];
+    document.getElementById('active-p').style.display = state.turn===0 && !state.gameOver ? '' : 'none';
+    document.getElementById('active-c').style.display = state.turn===1 && !state.gameOver ? '' : 'none';
+    document.getElementById('turn-label').textContent  = state.gameOver ? '' : state.turn===0 ? 'Your turn \u2014 roll!' : 'CPU is thinking...';
+    document.getElementById('roll-btn').disabled = state.turn!==0 || state.rolling || state.gameOver;
+  }
+
+  function setAutoPlay(val) {
+    autoPlay = val;
+    document.getElementById('auto-toggle').style.background = autoPlay ? '#2e7d32' : '#ddd';
+    document.getElementById('auto-knob').style.left = autoPlay ? '24px' : '4px';
+    if (autoPlay && state.turn===0 && !state.rolling && !state.gameOver) scheduleAutoRoll();
+  }
+
+  document.getElementById('auto-toggle').addEventListener('click', () => setAutoPlay(!autoPlay));
+
+  function scheduleAutoRoll() {
+    clearTimeout(autoRollTimer);
+    if (!autoPlay || state.turn!==0 || state.rolling || state.gameOver) return;
+    autoRollTimer = setTimeout(() => {
+      if (!autoPlay || state.turn!==0 || state.rolling || state.gameOver) return;
+      state.rolling = true;
+      document.getElementById('roll-btn').disabled = true;
+      doTurn(0, () => {
+        if (state.gameOver) return;
+        state.turn = 1; state.rolling = false; updateUI(); nextTurn();
+      });
+    }, 1200);
+  }
+
+  // ── Dice animation ──
+  function animateDice(finalVal, cb) {
+    const el = document.getElementById('dice-display');
+    let count = 0;
+    const iv = setInterval(() => {
+      el.textContent = DICE_FACES[Math.floor(Math.random() * 6)];
+      if (++count >= 12) { clearInterval(iv); el.textContent = DICE_FACES[finalVal - 1]; cb(); }
+    }, 70);
+  }
+
+  // ── Token animation ──
+  function moveToken(playerIdx, from, to, cb) {
+    const dir = from < to ? 1 : -1;
+    const steps = [];
+    for (let s = from + dir; s !== to + dir; s += dir) steps.push(s);
+    let i = 0;
+    function step() {
+      if (i >= steps.length) { cb(); return; }
+      state.pos[playerIdx] = steps[i];
+      pixelPos[playerIdx]  = squareToCoord(steps[i]);
+      i++;
+      drawTokens();
+      setTimeout(step, 110);
+    }
+    step();
+  }
+
+  function animateCurve(playerIdx, fromSq, toSq, isSnake, cb) {
+    const start = squareToCoord(fromSq);
+    const end   = squareToCoord(Math.max(1, toSq));
+    let cp;
+    if (isSnake && LONG_SNAKE_CP[fromSq]) {
+      const raw = LONG_SNAKE_CP[fromSq][0];
+      cp = [raw[0] * SX, raw[1] * SY, raw[2] * SX, raw[3] * SY];
+    } else {
+      cp = getCurveCP(start.x, start.y, end.x, end.y, isSnake);
+    }
+    const [cp1x, cp1y, cp2x, cp2y] = cp;
+    const duration = isSnake
+      ? Math.min(1800, 600 + Math.abs(fromSq - toSq) * 12)
+      : Math.min(1600, 500 + Math.abs(fromSq - toSq) * 10);
+    const startTime = performance.now();
+    function frame(now) {
+      const elapsed = now - startTime;
+      let t = Math.min(elapsed / duration, 1);
+      t = t < 0.5 ? 2*t*t : -1 + (4 - 2*t)*t;
+      pixelPos[playerIdx] = {
+        x: cubicBezier(t, start.x, cp1x, cp2x, end.x),
+        y: cubicBezier(t, start.y, cp1y, cp2y, end.y)
+      };
+      drawTokens();
+      if (elapsed < duration) {
+        requestAnimationFrame(frame);
+      } else {
+        state.pos[playerIdx] = Math.max(1, toSq);
+        pixelPos[playerIdx]  = squareToCoord(state.pos[playerIdx]);
+        drawTokens(); cb();
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ── Game logic ──
+  function doTurn(playerIdx, cb) {
+    const name = playerIdx === 0 ? 'You' : 'CPU';
+    const die  = Math.ceil(Math.random() * 6);
+    addLog(name + ' rolled a <strong>' + die + '</strong>');
+    animateDice(die, () => {
+      const from = state.pos[playerIdx];
+      const to   = from + die;
+      if (to > 132) {
+        addLog(name + ' needs exact roll \u2014 stay at ' + (from < 1 ? 'start' : from));
+        state.pos[playerIdx] = from; drawTokens(); setTimeout(cb, 600); return;
+      }
+      moveToken(playerIdx, from, to, () => {
+        if (to === 132) {
+          state.pos[playerIdx] = 132;
+          pixelPos[playerIdx]  = squareToCoord(132);
+          drawTokens(); showWin(playerIdx); return;
+        }
+        if (SNAKES[to] !== undefined) {
+          const dest = SNAKES[to];
+          highlightSquare(to, '#c62828');
+          addLog(name + ' hit a snake at <strong>' + to + '</strong>! \u2193 Sliding to ' + (dest < 1 ? 1 : dest), 'log-snake');
+          setTimeout(() => { clearHighlight(); animateCurve(playerIdx, to, dest, true, () => { updateUI(); cb(); }); }, 400);
+        } else if (LADDERS[to] !== undefined) {
+          const dest = LADDERS[to];
+          highlightSquare(to, '#2e7d32');
+          addLog(name + ' found a ladder at <strong>' + to + '</strong>! \u2191 Climbing to ' + dest, 'log-ladder');
+          setTimeout(() => { clearHighlight(); animateCurve(playerIdx, to, dest, false, () => { updateUI(); cb(); }); }, 400);
+        } else {
+          setTimeout(cb, 300);
+        }
+      });
+    });
+  }
+
+  function nextTurn() {
+    if (state.gameOver || state.turn !== 1) return;
+    document.getElementById('roll-btn').disabled = true;
+    setTimeout(() => {
+      doTurn(1, () => { state.turn = 0; state.rolling = false; updateUI(); drawTokens(); if (autoPlay) scheduleAutoRoll(); });
+    }, 900);
+  }
+
+  document.getElementById('roll-btn').addEventListener('click', () => {
+    if (state.turn !== 0 || state.rolling || state.gameOver) return;
+    state.rolling = true;
+    document.getElementById('roll-btn').disabled = true;
+    doTurn(0, () => {
+      if (state.gameOver) return;
+      state.turn = 1; state.rolling = false; updateUI(); nextTurn();
+    });
+  });
+
+  function showWin(playerIdx) {
+    state.gameOver = true;
+    clearTimeout(autoRollTimer);
+    addLog((playerIdx === 0 ? 'You' : 'CPU') + ' reached Paramapada (132)!', 'log-win');
+    updateUI(); spawnConfetti();
+    const ov = document.createElement('div'); ov.id = 'win-overlay';
+    ov.innerHTML = '<div id="win-card"><div id="win-title">'
+      + (playerIdx === 0 ? '\uD83C\uDF89 You Win!' : 'CPU Wins!')
+      + '</div><div id="win-sub">'
+      + (playerIdx === 0 ? 'You reached Paramapada!' : 'Better luck next time!')
+      + '</div><button id="play-again">Play Again</button></div>';
+    document.body.appendChild(ov);
+    ov.querySelector('#play-again').addEventListener('click', () => {
+      ov.remove();
+      document.querySelectorAll('.confetti-piece').forEach(e => e.remove());
+      resetGame();
+    });
+  }
+
+  function spawnConfetti() {
+    const colors = ['#1565C0','#B71C1C','#2e7d32','#f9a825','#6a1b9a'];
+    const style  = document.createElement('style');
+    style.textContent = '@keyframes fall{to{top:110vh;transform:rotate(720deg) translateX(80px);}}';
+    document.head.appendChild(style);
+    for (let i = 0; i < 70; i++) {
+      const el = document.createElement('div'); el.className = 'confetti-piece';
+      const sz = 5 + Math.random() * 8;
+      el.style.cssText = 'position:fixed;top:-10px;left:' + Math.random()*100 + 'vw;width:' + sz + 'px;height:' + sz + 'px;background:' + colors[Math.floor(Math.random()*colors.length)] + ';border-radius:' + (Math.random()>0.5?'50%':'2px') + ';animation:fall ' + (1.4+Math.random()*2)+'s linear '+(Math.random()*1.5)+'s forwards;z-index:1001;';
+      document.body.appendChild(el);
+    }
+  }
+
+  function resetGame() {
+    clearTimeout(autoRollTimer);
+    state    = { pos: [0, 0], turn: 0, rolling: false, gameOver: false };
+    pixelPos = [null, null];
+    document.getElementById('log').innerHTML = '';
+    document.getElementById('dice-display').textContent = DICE_FACES[0];
+    clearHighlight(); drawTokens(); updateUI();
+    addLog('New game started. Good luck!');
+    if (autoPlay) scheduleAutoRoll();
+  }
+
+  // ── Initialise & handle resize ──
+  function init() {
+    computeScale();
+    drawTokens();
+    updateUI();
+    addLog('Game started! Your turn first.');
+  }
+
+  // Wait for image to load before computing scale
+  if (boardImg.complete) {
+    init();
+  } else {
+    boardImg.addEventListener('load', init);
+  }
+
+  // Recompute on resize / orientation change
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      computeScale();
+      // Reposition all pixel positions
+      for (let i = 0; i < 2; i++) {
+        if (state.pos[i] >= 1) pixelPos[i] = squareToCoord(state.pos[i]);
+      }
+      drawTokens();
+      clearHighlight();
+    }, 100);
+  });
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sundarakandam Parayana Planner</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="A beautiful and intuitive tool to track your 68-day Sundarakandam reading cycle. Read 7 chapters a day and complete the parayana smoothly."/>
+  <meta name="theme-color" content="#18181b"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Sundara Parayana"/>
+  
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="apple-touch-icon" href="icon.svg"/>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Yatra+One&display=swap" rel="stylesheet"/>
+
+  <!-- Stylesheet -->
+  <link href="style.css" rel="stylesheet"/>
+</head>
+<body>
+
+  <!-- Background decorative elements -->
+  <div class="bg-glow bg-glow-1"></div>
+  <div class="bg-glow bg-glow-2"></div>
+
+  <!-- App Wrapper -->
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="header-logo">
+        <!-- Spiritual Om/Lotus inspired SVG -->
+        <svg viewBox="0 0 100 100" width="50" height="50" class="spiritual-icon" aria-hidden="true">
+          <path fill="url(#goldGradient)" d="M50,15 C55,30 65,35 80,35 C65,40 58,50 58,65 C58,50 51,40 36,40 C51,35 48,30 50,15 Z" />
+          <path fill="url(#goldGradient)" opacity="0.7" d="M50,25 C53,35 60,38 70,38 C60,42 55,48 55,58 C55,48 50,42 40,42 C50,38 48,35 50,25 Z" />
+          <circle cx="50" cy="78" r="6" fill="#F59E0B" />
+          <circle cx="50" cy="78" r="3" fill="#FFF" />
+          <defs>
+            <linearGradient id="goldGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#FBBF24" />
+              <stop offset="100%" stop-color="#D97706" />
+            </linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <div class="header-titles">
+        <h1 class="main-title" id="title-main">सुन्दरकाण्ड पारायण</h1>
+        <p class="subtitle" id="title-sub">Sundarakandam Parayana Planner</p>
+      </div>
+      <button class="settings-toggle-btn" id="btn-settings-toggle" aria-label="Open Settings">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Main Grid Dashboard -->
+    <main class="dashboard-grid">
+
+      <!-- Left Column: Reading Card & Progress -->
+      <div class="dashboard-col col-left">
+        
+        <!-- Today's Reading Panel -->
+        <section class="glass-panel reading-panel" id="panel-today-reading">
+          <div class="panel-header">
+            <span class="badge" id="badge-day-number">Day --</span>
+            <h2 class="panel-title" id="lbl-reading-header">Today's Reading</h2>
+            <p class="panel-subtitle" id="lbl-today-date">--</p>
+          </div>
+          
+          <div class="reading-target-box">
+            <div class="chapters-range" id="lbl-chapters-range">Chapters --</div>
+            <p class="target-desc" id="lbl-chapters-desc">Read these 7 chapters to stay on schedule.</p>
+          </div>
+
+          <!-- Checklist -->
+          <div class="checklist-container">
+            <h3 class="checklist-title">Sargas Checklist</h3>
+            <ul class="checklist" id="list-sargas-checklist">
+              <!-- Dynamically populated -->
+            </ul>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-bar">
+            <button class="primary-btn" id="btn-complete-day">
+              <span class="btn-text">Mark Day Completed</span>
+              <svg class="btn-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- Progress Overview -->
+        <section class="glass-panel progress-panel" id="panel-progress">
+          <h2 class="panel-title">Your Progress</h2>
+          <div class="progress-stats">
+            <div class="progress-ring-wrapper">
+              <svg class="progress-ring" width="120" height="120">
+                <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.05)" stroke-width="8" fill="transparent" r="50" cx="60" cy="60" />
+                <circle class="progress-ring-bar" id="ring-progress-bar" stroke="url(#goldGradient)" stroke-width="8" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-linecap="round" fill="transparent" r="50" cx="60" cy="60" />
+              </svg>
+              <div class="progress-percent" id="lbl-progress-percent">0%</div>
+            </div>
+            
+            <div class="stats-text">
+              <div class="stat-item">
+                <span class="stat-label">Days Complete</span>
+                <span class="stat-val" id="lbl-stat-days-complete">0 / 68</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Chapters Read</span>
+                <span class="stat-val" id="lbl-stat-chapters-read">0 / 476</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Completion Date</span>
+                <span class="stat-val" id="lbl-stat-completion-date">--</span>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Right Column: Full Schedule -->
+      <div class="dashboard-col col-right">
+        <section class="glass-panel schedule-panel">
+          <div class="schedule-header">
+            <h2 class="panel-title">68-Day Reading Schedule</h2>
+            <div class="schedule-filter">
+              <button class="filter-btn active" id="btn-filter-all">All</button>
+              <button class="filter-btn" id="btn-filter-pending">Pending</button>
+              <button class="filter-btn" id="btn-filter-completed">Completed</button>
+            </div>
+          </div>
+
+          <div class="schedule-list-container">
+            <div class="schedule-list" id="list-schedule-days">
+              <!-- Dynamically populated 68 Day Cards -->
+            </div>
+          </div>
+        </section>
+      </div>
+
+    </main>
+
+    <!-- Settings & Adjustments Drawer / Overlay -->
+    <div class="settings-overlay" id="overlay-settings">
+      <div class="settings-drawer">
+        <div class="drawer-header">
+          <h2 class="drawer-title">Schedule Settings</h2>
+          <button class="close-btn" id="btn-settings-close" aria-label="Close Settings">
+            <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div class="drawer-content">
+          <!-- Start Date Selection -->
+          <div class="setting-group">
+            <label class="setting-label" for="input-start-date">Parayana Start Date</label>
+            <input type="date" class="setting-input" id="input-start-date"/>
+            <p class="setting-help">Changing the start date shifts the target dates for all 68 days.</p>
+          </div>
+
+          <!-- Adjust Day Offset (Re-anchor) -->
+          <div class="setting-group">
+            <label class="setting-label" for="input-anchor-day">Align Schedule</label>
+            <div class="inline-input-group">
+              <span class="setting-prefix-text">Today I am reading Day</span>
+              <input type="number" class="setting-input compact-input" id="input-anchor-day" min="1" max="68" value="1"/>
+            </div>
+            <button class="secondary-btn" id="btn-align-schedule">Update Start Date to Align</button>
+            <p class="setting-help">If you missed days or are ahead, this will recalculate your Start Date so your chosen Day matches today's date.</p>
+          </div>
+
+          <!-- Reset Options -->
+          <div class="setting-group reset-group">
+            <h3 class="setting-subheader">Reset Cycle</h3>
+            <p class="setting-help">This will clear all completed chapters and days, and set the start date to today.</p>
+            <button class="danger-btn" id="btn-reset-cycle">Reset Parayana Progress</button>
+          </div>
+
+          <!-- About/Rule Info -->
+          <div class="setting-group info-group">
+            <h3 class="setting-subheader">Parayana Rules</h3>
+            <ul class="rules-list">
+              <li><strong>Total Chapters:</strong> 68 sargas in Sundarakandam.</li>
+              <li><strong>Daily Quota:</strong> Read exactly 7 chapters daily.</li>
+              <li><strong>Wrap-around:</strong> After Chapter 68, the cycle continues immediately with Chapter 1. E.g., Day 10 is Ch. 64-68, then Ch. 1-2.</li>
+              <li><strong>The End Condition:</strong> The parayana concludes on the day when the 7th chapter of that day is Chapter 68. This occurs precisely on <strong>Day 68</strong> after completing 7 full cycles (476 chapters in total).</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Celebration/Completion Banner -->
+    <div class="completion-overlay" id="overlay-completion">
+      <div class="completion-card">
+        <div class="celebration-emoji">🕉️✨</div>
+        <h2 class="completion-title">जय श्री राम</h2>
+        <p class="completion-subtitle">Jaya Sri Rama</p>
+        <p class="completion-text">Congratulations! You have successfully completed your 68-day Sundarakandam Parayana cycle!</p>
+        <div class="completion-summary-box">
+          <p>Started: <span id="lbl-completed-start-date">--</span></p>
+          <p>Completed: <span id="lbl-completed-end-date">--</span></p>
+          <p>Total Chapters Read: 476 (7 cycles of 68 sargas)</p>
+        </div>
+        <button class="primary-btn" id="btn-new-cycle">Start a New Cycle</button>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
